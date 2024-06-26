@@ -2,7 +2,7 @@ import Image from "next/image";
 import {
   DesktopHeaderBackground,
   MobileHeaderBackground,
-} from "/public/assets/images/index.ts";
+} from "../../public/assets/images";
 
 export default function Home() {
   return (

@@ -374,18 +374,456 @@ const myCanvas = document.getElementById("main_canvas") as HTMLCanvasElement;
 
 // You can also use the angle-bracket syntax (except if the code is in a .tsx file), which is equivalent:
 
-const myCanvasTwo = <HTMLCanvasElement>document.getElementById("main_canvas_two");
+const myCanvasTwo = <HTMLCanvasElement>(
+  document.getElementById("main_canvas_two")
+);
 
 // Reminder: Because type assertions are removed at compile-time, there is no runtime checking associated with a type assertion. There won’t be an exception or null generated if the type assertion is wrong.
 
 // TypeScript only allows type assertions which convert to a more specific or less specific version of a type. This rule prevents “impossible” coercions like:
 
-const x = "hello" as number
+const x = "hello" as number;
 
 // Sometimes this rule can be too conservative and will disallow more complex coercions that might be valid. If this happens, you can use two assertions, first to any (or unknown, which we’ll introduce later), then to the desired type:
 
 // const a = expr as any as T;
-const a = "hello" as any as number
+const a = "hello" as any as number;
 
 // Literal Types
 
+// Infered as type: "string"
+// because let values can change, it can be any string
+let changingString = "Hello World";
+changingString = "Olá Mundo";
+
+// Infered as specific type string: "Hello World"
+// because const values can't change, can only be this specific value
+const constantString = "Hello World";
+constantString;
+
+// By themselves, literal types aren’t very valuable:
+let popper: "hello" = "hello";
+popper = "hello";
+popper = "hi";
+// It’s not much use to have a variable that can only have one value!
+
+// But by combining literals into unions, you can express a much more useful concept - for example, functions that only accept a certain set of known values:
+function printText(name: string, alignment: "left" | "right" | "straight") {
+  console.log(`Hello ${name}, Go ${alignment}`);
+}
+printText("Steve", "straight");
+printText("Steve", "up");
+
+// Same with number unions:
+function compareThese(a: string, b: string): -1 | 0 | 1 {
+  return a === b ? 0 : a > b ? 1 : -1;
+}
+
+//can combine these with non-literal types:
+
+interface Options {
+  width: number;
+}
+function configure(x: Options | "auto") {
+  return x;
+}
+
+configure({ width: 100 });
+configure("auto");
+configure("manual");
+
+// There’s one more kind of literal type: boolean literals. There are only two boolean literal types, and as you might guess, they are the types true and false. The type boolean itself is actually just an alias for the union true | false.
+
+// Literal Inference
+
+// When you initialize a variable with an object, TypeScript assumes that the properties of that object might change values later. For example, if you wrote code like this:
+
+const obj = { counter: 0 };
+if (true) {
+  obj.counter = 1;
+}
+
+// TypeScript doesn’t assume the assignment of 1 to a field which previously had 0 is an error. Another way of saying this is that obj.counter must have the type number, not 0, because types are used to determine both reading and writing behavior.
+
+// The same applies to strings:
+
+declare function handleRequest(url: string, method: "GET" | "POST"): void;
+
+const req = { url: "https://example.com", method: "GET" };
+
+handleRequest(req.url, req.method);
+
+// In the above example req.method is inferred to be string, not "GET". Because code can be evaluated between the creation of req and the call of handleRequest which could assign a new string like "GUESS" to req.method, TypeScript considers this code to have an error.
+
+// There are two ways to work around this.
+
+// Change #1:
+const reqTwo = { url: "https://example.com", method: "GET" as "GET" };
+// Change #2
+handleRequest(reqTwo.url, reqTwo.method as "GET");
+
+// Change 1 means “I intend for req.method to always have the literal type "GET"”, preventing the possible assignment of "GUESS" to that field after. Change 2 means “I know for other reasons that req.method has the value "GET"“.
+
+// OR
+
+// You can use "as const" to convert the entire object to be type literals:
+
+const reqThree = { url: "https://example.com", method: "GET" } as const;
+handleRequest(reqThree.url, reqThree.method);
+
+// The "as const" suffix acts like const but for the type system, ensuring that all properties are assigned the literal type instead of a more general version like string or number.
+
+// null and undefined
+
+// JavaScript has two primitive values used to signal absent or uninitialized value: null and undefined.
+
+// TypeScript has two corresponding types by the same names. How these types behave depends on whether you have the strictNullChecks option on.
+
+// strictNullChecks :off
+// With strictNullChecks off, values that might be null or undefined can still be accessed normally, and the values null and undefined can be assigned to a property of any type. This is similar to how languages without null checks (e.g. C#, Java) behave. The lack of checking for these values tends to be a major source of bugs; we always recommend people turn strictNullChecks on if it’s practical to do so in their codebase.
+
+// strictNullChecks on
+// With strictNullChecks on, when a value is null or undefined, you will need to test for those values before using methods or properties on that value. Just like checking for undefined before using an optional property, we can use narrowing to check for values that might be null:
+
+function doSomething(x: string | null) {
+  if (x === null) {
+    return null;
+  } else {
+    console.log("Hello, " + x.toUpperCase());
+  }
+}
+// doSomething(null)
+
+// ~~~~~~~~~~~~ //
+
+// Non-null Assertion Operator (Postfix "!")
+
+// TypeScript also has a special syntax for removing null and undefined from a type without doing any explicit checking. Writing ! after any expression is effectively a type assertion that the value isn’t null or undefined:
+
+function liveDangerously(x?: number | null) {
+  // no error
+  console.log(x!.toFixed());
+}
+
+// Just like other type assertions, this doesn’t change the runtime behavior of your code, so it’s important to only use "!" when you know that the value can’t be null or undefined.
+
+// Enums
+
+// Enums are a feature added to JavaScript by TypeScript which allows for describing a value which could be one of a set of possible named constants. Unlike most TypeScript features, this is not a type-level addition to JavaScript but something added to the language and runtime. Because of this, it’s a feature which you should know exists, but maybe hold off on using unless you are sure. You can read more about enums in the Enum reference page.
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~ //
+
+// Less Common Primitives
+
+// It’s worth mentioning the rest of the primitives in JavaScript which are represented in the type system.
+
+// bigint -
+
+// From ES2020 onwards, there is a primitive in JavaScript used for very large integers, BigInt:
+
+// Creating a bigint via the BigInt function
+const oneHundred: bigint = BigInt(100);
+
+// Creating a BigInt via the literal syntax (BigInt literals are not available when targeting lower than ES2020.)
+const anotherHundred: bigint = 100n;
+
+// symbol
+// There is a primitive in JavaScript used to create a globally unique reference via the function Symbol():
+
+const firstName = Symbol("name");
+const secondName = Symbol("name");
+
+if (firstName === secondName) {
+  // Can't ever happen
+}
+
+// ~~~~ Narrowing ~~~~ //
+
+// Handling things that can have different types.
+
+function padLeft(padding: number | string, input: string): string {
+  if (typeof padding === "number") {
+    return "".repeat(padding) + input;
+  }
+  return padding + input;
+}
+
+// While it might not look like much, there’s actually a lot going on under the covers here. Much like how TypeScript analyzes runtime values using static types, it overlays type analysis on JavaScript’s runtime control flow constructs like if/else, conditional ternaries, loops, truthiness checks, etc., which can all affect those types.
+
+// Within our if check, TypeScript sees typeof padding === "number" and understands that as a special form of code called a type guard. TypeScript follows possible paths of execution that our programs can take to analyze the most specific possible type of a value at a given position. It looks at these special checks (called type guards) and assignments, and the process of refining types to more specific types than declared is called narrowing. In many editors we can observe these types as they change, and we’ll even do so in our examples.
+
+// "typeof" type guards
+
+// this operator comes up pretty often in a number of JavaScript libraries, and TypeScript can understand it to narrow types in different branches.
+
+// In TypeScript, checking against the value returned by typeof is a type guard. Because TypeScript encodes how typeof operates on different values, it knows about some of its quirks in JavaScript.
+// For example, typeof doesn’t return the string null.
+
+function printAll(strs: string | string[] | null) {
+  // if (strs === "" || !strs) return // handling null as falsy
+  if (typeof strs === "object") {
+    for (const s of strs) {
+      console.log(strs);
+    }
+  } else if (typeof strs === "string") {
+    console.log(strs);
+  } else {
+    // do nothing
+  }
+}
+
+// In the printAll function, we try to check if strs is an object to see if it’s an array type (now might be a good time to reinforce that arrays are object types in JavaScript). But it turns out that in JavaScript, typeof null is actually "object"! This is one of those unfortunate accidents of history.
+
+// Users with enough experience might not be surprised, but not everyone has run into this in JavaScript; luckily, TypeScript lets us know that strs was only narrowed down to string[] | null instead of just string[].
+
+// This might be a good segue into what we’ll call “truthiness” checking.
+
+// ~~~~ Truthiness narrowing ~~~~ //
+
+// Truthiness might not be a word you’ll find in the dictionary, but it’s very much something you’ll hear about in JavaScript.
+
+// In JavaScript, we can use any expression in conditionals, &&s, ||s, if statements, Boolean negations (!), and more. As an example, if statements don’t expect their condition to always have the type boolean.
+
+// Can use truthy/falsy values fro narrowing
+
+// In JavaScript, constructs like if first “coerce” their conditions to booleans to make sense of them, and then choose their branches depending on whether the result is true or false. Values like
+
+// 0
+// NaN
+// "" (the empty string)
+// 0n (the bigint version of zero)
+// null
+// undefined
+// all coerce to false, and other values get coerced to true. You can always coerce values to booleans by running them through the Boolean function, or by using the shorter double-Boolean negation. (The latter has the advantage that TypeScript infers a narrow literal boolean type true, while inferring the first as type boolean.)
+
+// both of these result in 'true'
+Boolean("hello"); // type: boolean, value: true
+!!"world"; // type: true,    value: true
+
+// It’s fairly popular to leverage this behavior, especially for guarding against values like null or undefined. As an example, let’s try using it for our printAll function.
+
+function printAllAgain(strs: string | string[] | null) {
+  if (strs && typeof strs === "object") {
+    for (const s of strs) {
+      console.log(s);
+    }
+  } else if (typeof strs === "string") {
+    console.log(strs);
+  }
+}
+
+// Keep in mind though that truthiness checking on primitives can often be error prone. As an example, consider a different attempt at writing printAll
+
+// We wrapped the entire body of the function in a truthy check, but this has a subtle downside: we may no longer be handling the empty string case correctly.
+
+// TypeScript doesn’t hurt us here at all, but this behavior is worth noting if you’re less familiar with JavaScript. TypeScript can often help you catch bugs early on, but if you choose to do nothing with a value, there’s only so much that it can do without being overly prescriptive. If you want, you can make sure you handle situations like these with a linter.
+
+function printAllWrong(strs: string | string[] | null) {
+  //  DON'T DO THIS!
+  if (strs) {
+    if (typeof strs === "object") {
+      for (const s of strs) {
+        console.log(s);
+      }
+    } else if (typeof strs === "string") {
+      console.log(strs);
+    }
+  }
+}
+
+// One last word on narrowing by truthiness is that Boolean negations with ! filter out from negated branches.
+
+function multiplyAll(
+  values: number[] | undefined,
+  factor: number
+): number[] | undefined {
+  if (!values) {
+    return values;
+  } else {
+    return values.map((x) => x * factor);
+  }
+}
+
+// Equality narrowing
+
+// TypeScript also uses switch statements and equality checks like ===, !==, ==, and != to narrow types.
+
+function example(x: string | number, y: string | boolean) {
+  if (x === y) {
+    // We can now call any 'string' method on 'x' or 'y'.
+    // Because the types crossover (only common type is string).
+    // only time they can be equal, is if both their types are a string.
+    x.toUpperCase();
+    y.toUpperCase();
+  } else {
+    console.log(x);
+    console.log(y);
+  }
+}
+
+// Checking against specific literal values (as opposed to variables) works also. In our section about truthiness narrowing, we wrote a printAll function which was error-prone because it accidentally didn’t handle empty strings properly. Instead we could have done a specific check to block out nulls, and TypeScript still correctly removes null from the type of strs.
+
+function printAllWithoutNulls(strs: string | string[] | null) {
+  if (strs !== null) {
+    if (typeof strs === "object") {
+      for (const s of strs) {
+        console.log(s);
+      }
+    } else if (typeof strs === "string") {
+      console.log(strs);
+    }
+  }
+}
+
+// JavaScript’s looser equality checks with == and != also get narrowed correctly. If you’re unfamiliar, checking whether something == null actually not only checks whether it is specifically the value null - it also checks whether it’s potentially undefined. The same applies to == undefined: it checks whether a value is either null or undefined.
+
+interface Container {
+  value: number | null | undefined;
+}
+
+function multiplyValue(container: Container, factor: number) {
+  // Remove both "null" and "undefined" from the type.
+  if (container.value != null) {
+    console.log(container.value);
+    // Now we can safely multiply 'container.value'.
+    container.value *= factor;
+  }
+}
+
+// The "in" operator narrowing
+
+// JavaScript has an operator for determining if an object or its prototype chain has a property with a name: the in operator. TypeScript takes this into account as a way to narrow down potential types.
+
+// For example, with the code: "value" in x. where "value" is a string literal and x is a union type. The “true” branch narrows x’s types which have either an optional or required property value, and the “false” branch narrows to types which have an optional or missing property value.
+
+type Fish = { swim: () => void };
+type Bird = { fly: () => void };
+
+function move(animal: Fish | Bird) {
+  if ("swim" in animal) {
+    return animal.swim();
+  }
+  return animal.fly();
+}
+move({ swim: () => "swim away" });
+
+// To reiterate, optional properties will exist in both sides for narrowing. For example, a human could both swim and fly (with the right equipment) and thus should show up in both sides of the in check:
+
+type FishOne = { swim: () => void };
+type BirdOne = { fly: () => void };
+type Human = { fly?: () => void; swim?: () => void };
+
+function moveAgain(animal: Fish | Bird | Human) {
+  if ("swim" in animal) {
+    return animal;
+  }
+  return animal;
+}
+
+// "instanceof" narrowing
+
+// JavaScript has an operator for checking whether or not a value is an “instance” of another value. More specifically, in JavaScript x instanceof Foo checks whether the prototype chain of x contains Foo.prototype. While we won’t dive deep here, and you’ll see more of this when we get into classes, they can still be useful for most values that can be constructed with new. As you might have guessed, instanceof is also a type guard, and TypeScript narrows in branches guarded by instanceofs.
+
+function logValue(x: Date | string) {
+  if (x instanceof Date) {
+    console.log(x.toUTCString());
+  } else {
+    console.log(x.toUpperCase());
+  }
+}
+
+// Assignments
+
+// As we mentioned earlier, when we assign to any variable, TypeScript looks at the right side of the assignment and narrows the left side appropriately.
+
+let xt12 = Math.random() < 0.5 ? 10 : "hello world";
+xt12 = 1;
+xt12 = "Yes";
+xt12 = true;
+xt12 = [];
+
+// Notice that each of these assignments is valid. Even though the observed type of x changed to number after our first assignment, we were still able to assign a string to x. This is because the declared type of x - the type that x started with - is string | number, and assignability is always checked against the declared type.
+
+// Control flow analysis:
+
+// Up until this point, we’ve gone through some basic examples of how TypeScript narrows within specific branches. But there’s a bit more going on than just walking up from every variable and looking for type guards in ifs, whiles, conditionals, etc. For example
+
+function padRight(padding: number | string, input: string) {
+  if (typeof padding === "number") {
+    return " ".repeat(padding) + input;
+  }
+  return padding + input;
+}
+
+// This analysis of code based on reachability is called control flow analysis, and TypeScript uses this flow analysis to narrow types as it encounters type guards and assignments. When a variable is analyzed, control flow can split off and re-merge over and over again, and that variable can be observed to have a different type at each point.
+
+function exampleFour() {
+  let xyzr: string | number | boolean;
+
+  xyzr = Math.random() < 0.5;
+
+  console.log(xyzr);
+
+  if (Math.random() < 0.5) {
+    xyzr = "hello";
+    console.log(xyzr);
+  } else {
+    xyzr = 100;
+    console.log(xyzr);
+  }
+
+  return x;
+}
+
+// Using type predicates
+
+// We’ve worked with existing JavaScript constructs to handle narrowing so far, however sometimes you want more direct control over how types change throughout your code.
+
+// To define a user-defined type guard, we simply need to define a function whose return type is a type predicate:
+
+function isFish(pet: Fish | Bird): pet is Fish {
+  return (pet as Fish).swim !== undefined;
+}
+
+// pet is Fish is our type predicate in this example. A predicate takes the form parameterName is Type, where parameterName must be the name of a parameter from the current function signature.
+
+// Any time isFish is called with some variable, TypeScript will narrow that variable to that specific type if the original type is compatible.
+
+const getSmallPet = (petType: "fish" | "bird") => {
+  if (petType === "fish") {
+    return {
+      swim: () => "Fish!",
+    };
+  }
+  return {
+    fly: () => "Bird!",
+  };
+};
+
+let pet = getSmallPet("fish");
+
+if (isFish(pet)) {
+  pet.swim();
+} else {
+  pet.fly()
+}
+
+// Notice that TypeScript not only knows that pet is a Fish in the if branch; it also knows that in the else branch, you don’t have a Fish, so you must have a Bird.
+
+// You may use the type guard isFish to filter an array of Fish | Bird and obtain an array of Fish: 
+
+const zoo: (Fish | Bird)[] = [getSmallPet("fish"), getSmallPet("bird"), getSmallPet("fish")]
+
+const underWater1: Fish[] = zoo.filter(isFish)
+const underWater2: Fish[] = zoo.filter(isFish) as Fish[]
+
+// The predicate may need repeating for more complex examples:
+
+const underWater3: Fish[] = zoo.filter((pet): pet is Fish => {
+  if (pet.name === "sharkey") return false
+  return isFish(pet)
+})
+
+// In addition, classes can use this is Type to narrow their type.
+
+// Assertion functions

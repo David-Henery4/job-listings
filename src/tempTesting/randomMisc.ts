@@ -1,3 +1,5 @@
+// keywords used every now and then (is, in, as)
+
 interface User {
   name: string;
   age: number;
@@ -805,25 +807,341 @@ let pet = getSmallPet("fish");
 if (isFish(pet)) {
   pet.swim();
 } else {
-  pet.fly()
+  pet.fly();
 }
 
 // Notice that TypeScript not only knows that pet is a Fish in the if branch; it also knows that in the else branch, you don’t have a Fish, so you must have a Bird.
 
-// You may use the type guard isFish to filter an array of Fish | Bird and obtain an array of Fish: 
+// You may use the type guard isFish to filter an array of Fish | Bird and obtain an array of Fish:
 
-const zoo: (Fish | Bird)[] = [getSmallPet("fish"), getSmallPet("bird"), getSmallPet("fish")]
+const zoo: (Fish | Bird)[] = [
+  getSmallPet("fish"),
+  getSmallPet("bird"),
+  getSmallPet("fish"),
+];
 
-const underWater1: Fish[] = zoo.filter(isFish)
-const underWater2: Fish[] = zoo.filter(isFish) as Fish[]
+const underWater1: Fish[] = zoo.filter(isFish);
+const underWater2: Fish[] = zoo.filter(isFish) as Fish[];
 
 // The predicate may need repeating for more complex examples:
 
 const underWater3: Fish[] = zoo.filter((pet): pet is Fish => {
-  if (pet.name === "sharkey") return false
-  return isFish(pet)
-})
+  if (pet.name === "sharkey") return false;
+  return isFish(pet);
+});
 
 // In addition, classes can use this is Type to narrow their type.
 
-// Assertion functions
+// Assertion functions (Types can also be narrowed using Assertion functions.)
+
+// Discriminated unions
+
+// Most of the examples we’ve looked at so far have focused around narrowing single variables with simple types like string, boolean, and number. While this is common, most of the time in JavaScript we’ll be dealing with slightly more complex structures.
+
+// For some motivation, let’s imagine we’re trying to encode shapes like circles and squares. Circles keep track of their radiuses and squares keep track of their side lengths. We’ll use a field called kind to tell which shape we’re dealing with. Here’s a first attempt at defining Shape.
+
+interface Shape {
+  kind: "circle" | "square";
+  radious?: number;
+  sideLength?: number;
+}
+
+// Notice we’re using a union of string literal types: "circle" and "square" to tell us whether we should treat the shape as a circle or square respectively. By using "circle" | "square" instead of string, we can avoid misspelling issues.
+
+function handleShape(shape: Shape) {
+  if (shape.kind === "rect") {
+  }
+}
+
+// We can write a getArea function that applies the right logic based on if it’s dealing with a circle or square. We’ll first try dealing with circles.
+
+function getArea(shape: Shape) {
+  return Math.PI * shape.radious ** 2;
+}
+
+// Under strictNullChecks that gives us an error - which is appropriate since radius might not be defined. But what if we perform the appropriate checks on the kind property?
+
+function getAreaNow(shape: Shape) {
+  if (shape.kind === "circle") {
+    // return Math.PI * shape.radious ** 2;
+
+    // TypeScript still doesn’t know what to do here. We’ve hit a point where we know more about our values than the type checker does. We could try to use a non-null assertion (a ! after shape.radius) to say that radius is definitely present.
+
+    return Math.PI * shape.radious! ** 2;
+  }
+}
+
+// But this doesn’t feel ideal. We had to shout a bit at the type-checker with those non-null assertions (!) to convince it that shape.radius was defined, but those assertions are error-prone if we start to move code around. Additionally, outside of strictNullChecks we’re able to accidentally access any of those fields anyway (since optional properties are just assumed to always be present when reading them). We can definitely do better.
+
+// The problem with this encoding of Shape is that the type-checker doesn’t have any way to know whether or not radius or sideLength are present based on the kind property. We need to communicate what we know to the type checker. With that in mind, let’s take another swing at defining Shape.
+
+interface Circle {
+  kind: "circle";
+  radius: number;
+}
+
+interface Square {
+  kind: "square";
+  sideLength: number;
+}
+
+type ShapeTwo = Circle | Square;
+
+// Here, we’ve properly separated Shape out into two types with different values for the kind property, but radius and sideLength are declared as required properties in their respective types.
+
+// Let’s see what happens here when we try to access the radius of a Shape.
+
+// Like with our first definition of Shape, this is still an error. When radius was optional, we got an error (with strictNullChecks enabled) because TypeScript couldn’t tell whether the property was present. Now that Shape is a union, TypeScript is telling us that shape might be a Square, and Squares don’t have radius defined on them! Both interpretations are correct, but only the union encoding of Shape will cause an error regardless of how strictNullChecks is configured.
+
+function getNewArea(shape: ShapeTwo) {
+  if (shape.kind === "circle") {
+    return Math.PI * shape.radius ** 2;
+  }
+}
+
+// That got rid of the error! When every type in a union contains a common property with literal types, TypeScript considers that to be a discriminated union, and can narrow out the members of the union.
+
+// In this case, kind was that common property (which is what’s considered a discriminant property of Shape). Checking whether the kind property was "circle" got rid of every type in Shape that didn’t have a kind property with the type "circle". That narrowed shape down to the type Circle.
+
+// The same checking works with switch statements as well. Now we can try to write our complete getArea without any pesky ! non-null assertions.
+
+function getANewArea(shape: ShapeTwo) {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "square":
+      return shape.sideLength ** 2;
+  }
+}
+
+// The important thing here was the encoding of Shape. Communicating the right information to TypeScript - that Circle and Square were really two separate types with specific kind fields - was crucial. Doing that lets us write type-safe TypeScript code that looks no different than the JavaScript we would’ve written otherwise. From there, the type system was able to do the “right” thing and figure out the types in each branch of our switch statement.
+
+// As an aside, try playing around with the above example and remove some of the return keywords. You’ll see that type-checking can help avoid bugs when accidentally falling through different clauses in a switch statement.
+
+// Discriminated unions are useful for more than just talking about circles and squares. They’re good for representing any sort of messaging scheme in JavaScript, like when sending messages over the network (client/server communication), or encoding mutations in a state management framework.
+
+// ~~~~ The "never" type ~~~~
+
+// When narrowing, you can reduce the options of a union to a point where you have removed all possibilities and have nothing left. In those cases, TypeScript will use a never type to represent a state which shouldn’t exist.
+
+// ~~~~ Exhaustiveness checking ~~~~
+
+// The never type is assignable to every type; however, no type is assignable to never (except never itself). This means you can use narrowing and rely on never turning up to do exhaustive checking in a switch statement.
+
+// For example, adding a default to our getArea function which tries to assign the shape to never will not raise an error when every possible case has been handled.
+
+function getAreaAgain(shape: ShapeTwo) {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "square":
+      return shape.sideLength ** 2;
+    default:
+      const _exhaustiveCheck: never = shape;
+      return _exhaustiveCheck;
+  }
+}
+
+// Adding a new member to the Shape union, will cause a TypeScript error,
+// In the above example:
+
+// interface Triangle {
+// kind: "triangle";
+// sideLength: number;
+// }
+
+// type Shape = Circle | Square | Triangle;
+
+// Type 'Triangle' is not assignable to type 'never'.
+
+// #### ~~~~~~~~ MORE ON FUNCTIONS ~~~~~~~~ #### //
+
+// Functions are the basic building block of any application, whether they’re local functions, imported from another module, or methods on a class. They’re also values, and just like other values, TypeScript has many ways to describe how functions can be called. Let’s learn about how to write types that describe functions.
+
+// Function Type Expressions
+
+// The simplest way to describe a function is with a function type expression. These types are syntactically similar to arrow functions:
+// (a: string) => void
+function greeter(fn: (a: string) => void) {
+  fn("Hello, World");
+}
+
+function printToConsole(s: string) {
+  console.log(s);
+}
+
+greeter(printToConsole);
+
+// "void" when returned from function type means: NO RETURNED VALUE
+
+// The syntax "(a: string) => void" means “a function with one parameter, named a, of type string, that doesn’t have a return value”. Just like with function declarations, if a parameter type isn’t specified, it’s implicitly any.
+
+// Note that the parameter name is required. The function type "(string) => void" means “a function with a parameter named string of type any“!
+
+// Of course, we can use a type alias to name a function type:
+
+type GreetFunction = (a: string) => void;
+function greetAgain(fn: GreetFunction) {
+  fn("hello");
+}
+
+// Call Signatures
+
+// In JavaScript, functions can have properties in addition to being callable. However, the function type expression syntax doesn’t allow for declaring properties. If we want to describe something callable with properties, we can write a call signature in an object type:
+
+type DescribableFunction = {
+  description: string;
+  (arg: number): boolean;
+  // (arg: number): boolean
+};
+function doSomethingPlease(fn: DescribableFunction) {
+  console.log(fn.description + " returned " + fn(6));
+}
+
+function myFunc(arg: number) {
+  return arg > 3;
+}
+
+myFunc.description = "default description";
+doSomethingPlease(myFunc);
+
+// Note that the syntax is slightly different compared to a function type expression - use : between the parameter list and the return type rather than =>.
+
+// ~~ Construct Signatures
+
+// JavaScript functions can also be invoked with the new operator. TypeScript refers to these as constructors because they usually create a new object. You can write a construct signature by adding the "new" keyword in front of a "call signature":
+
+type SomeConstructor = {
+  new (s: string): {};
+};
+
+function fn(ctor: SomeConstructor) {
+  return new ctor("hello");
+}
+
+// Some objects, like JavaScript’s Date object, can be called with or without new. You can combine call and construct signatures in the same type arbitrarily:
+
+interface CallOrConstruct {
+  (n?: number): string;
+  new (s: string): Date;
+}
+
+// ~~~~ GENERIC FUNCTIONS ~~~~ //
+
+// It’s common to write a function where the types of the input relate to the type of the output, or where the types of two inputs are related in some way. Let’s consider for a moment a function that returns the first element of an array:
+
+function firstElement(arr: any[]) {
+  return arr[0];
+}
+
+// This function does its job, but unfortunately has the return type any. It’d be better if the function returned the type of the array element.
+
+// In TypeScript, generics are used when we want to describe a correspondence between two values. We do this by declaring a type parameter in the function signature:
+
+// function firstEle<String>(arr: string[]): string | undefined {
+//   return arr[0];
+// }
+
+function firstEle<Type>(arr: Type[]): Type | undefined {
+  return arr[0];
+}
+
+// By adding a type parameter "Type" to this function and using it in two places, we’ve created a link between the input of the function (the array) and the output (the return value). Now when we call it, a more specific type comes out:
+
+const s = firstEle(["a", "b", "c"]);
+const n = firstEle([1, 2, 3]);
+const u = firstEle([]);
+
+// Inference
+
+// Note that we didn’t have to specify Type in this sample. The type was inferred - chosen automatically - by TypeScript.
+
+// We can use multiple type parameters as well. For example, a standalone version of map would look like this:
+
+function map<Input, Output>(
+  arr: Input[],
+  func: (arg: Input) => Output
+): Output[] {
+  return arr.map(func);
+}
+
+// Parameter 'n' is of type 'string'
+// 'parsed' is of type 'number[]'
+const parsed = map(["1", "2", "3"], (n) => parseInt(n));
+
+// In this example, TypeScript could infer both the type of the Input type parameter (from the given string array), as well as the Output type parameter based on the return value of the function expression (number).
+
+// ######
+
+// Constraints
+
+// We’ve written some generic functions that can work on any kind of value. Sometimes we want to relate two values, but can only operate on a certain subset of values. In this case, we can use a constraint to limit the kinds of types that a type parameter can accept.
+
+// Let’s write a function that returns the longer of two values. To do this, we need a length property that’s a number. We constrain the type parameter to that type by writing an extends clause:
+
+// extends {length: number} = Means we are expecting a type that can access the
+// length method from it's prototype, which means it can only be,
+// a "string" or an "array" type
+// The length method is then expected to return a number
+
+// This creates a relatation between the types that can access the length method.
+
+function longest<Type extends {length: number}>(a:Type, b: Type){
+  if (a.length >= b.length) {
+    return a;
+  } else {
+    return b;
+  }
+}
+
+const longerArray = longest([1, 2], [1, 2, 3]);
+const longerString = longest("alice", "bob");
+const notOK = longest(10, 100);
+
+// There are a few interesting things to note in this example. We allowed TypeScript to infer the return type of longest. Return type inference also works on generic functions.
+
+// Because we constrained Type to { length: number }, we were allowed to access the .length property of the a and b parameters. Without the type constraint, we wouldn’t be able to access those properties because the values might have been some other type without a length property.
+
+// The types of "longerArray" and "longerString" were inferred based on the arguments. Remember, generics are all about relating two or more values with the same type!
+
+// Finally, just as we’d like, the call to longest(10, 100) is rejected because the number type doesn’t have a .length property.
+
+
+// ~~~~ Working with Constrained Values ~~~~ //
+
+// Here’s a common error when working with generic constraints:
+
+function minimumLength<Type extends {length: number}>(obj: Type, minimum: number): Type {
+  if (obj.length >= minimum){
+    return obj
+  } else {
+    return {length: minimum}
+  }
+}
+
+// It might look like this function is OK - Type is constrained to { length: number }, and the function either returns Type or a value matching that constraint. The problem is that the function promises to return the same kind of object as was passed in, not just some object matching the constraint. If this code were legal, you could write code that definitely wouldn’t work:
+
+// 'arr' gets value { length: 6 }
+const arr = minimumLength([1, 2, 3], 6);
+// and crashes here because arrays have
+// a 'slice' method, but not the returned object!
+console.log(arr.slice(0));
+
+// ~~~~ Specifying Type Arguments ~~~~ // 
+
+// TypeScript can usually infer the intended type arguments in a generic call, but not always. For example, let’s say you wrote a function to combine two arrays:
+
+function combine<Type>(arr1: Type[], arr2: Type[]): Type[] {
+  return arr1.concat(arr2)
+}
+
+// Normally it would be an error to call this function with mismatched arrays:
+const arrayish = combine([1, 2, 3], ["hello"]);
+
+// If you intended to do this, however, you could manually specify Type:
+const arrayishTwo = combine<string | number>([1, 2, 3], ["hello"]);
+
+// Guidelines for Writing Good Generic Functions
+
+// Writing generic functions is fun, and it can be easy to get carried away with type parameters. Having too many type parameters or using constraints where they aren’t needed can make inference less successful, frustrating callers of your function.
+

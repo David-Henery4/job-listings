@@ -3,6 +3,7 @@ import {
   DesktopHeaderBackground,
   MobileHeaderBackground,
 } from "../../public/assets/images";
+import {JobsContainer} from "@/components"
 
 export default function Home() {
   return (
@@ -10,6 +11,7 @@ export default function Home() {
       <div className="bg-desaturatedDarkCyan w-full h-[156px]">
         <MobileHeaderBackground className="w-full h-full" />
       </div>
+      <JobsContainer/>
     </main>
   );
 }

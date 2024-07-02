@@ -1086,7 +1086,7 @@ const parsed = map(["1", "2", "3"], (n) => parseInt(n));
 
 // This creates a relatation between the types that can access the length method.
 
-function longest<Type extends {length: number}>(a:Type, b: Type){
+function longest<Type extends { length: number }>(a: Type, b: Type) {
   if (a.length >= b.length) {
     return a;
   } else {
@@ -1106,16 +1106,18 @@ const notOK = longest(10, 100);
 
 // Finally, just as we’d like, the call to longest(10, 100) is rejected because the number type doesn’t have a .length property.
 
-
 // ~~~~ Working with Constrained Values ~~~~ //
 
 // Here’s a common error when working with generic constraints:
 
-function minimumLength<Type extends {length: number}>(obj: Type, minimum: number): Type {
-  if (obj.length >= minimum){
-    return obj
+function minimumLength<Type extends { length: number }>(
+  obj: Type,
+  minimum: number
+): Type {
+  if (obj.length >= minimum) {
+    return obj;
   } else {
-    return {length: minimum}
+    return { length: minimum };
   }
 }
 
@@ -1127,12 +1129,12 @@ const arr = minimumLength([1, 2, 3], 6);
 // a 'slice' method, but not the returned object!
 console.log(arr.slice(0));
 
-// ~~~~ Specifying Type Arguments ~~~~ // 
+// ~~~~ Specifying Type Arguments ~~~~ //
 
 // TypeScript can usually infer the intended type arguments in a generic call, but not always. For example, let’s say you wrote a function to combine two arrays:
 
 function combine<Type>(arr1: Type[], arr2: Type[]): Type[] {
-  return arr1.concat(arr2)
+  return arr1.concat(arr2);
 }
 
 // Normally it would be an error to call this function with mismatched arrays:
@@ -1145,3 +1147,45 @@ const arrayishTwo = combine<string | number>([1, 2, 3], ["hello"]);
 
 // Writing generic functions is fun, and it can be easy to get carried away with type parameters. Having too many type parameters or using constraints where they aren’t needed can make inference less successful, frustrating callers of your function.
 
+// Push Type Parameters Down
+
+// Here are two ways of writing a function that appear similar:
+
+function firstElement1<Type>(arr: Type[]) {
+  return arr[0];
+}
+
+function firstElement2<Type extends any[]>(arr: Type) {
+  return arr[0];
+}
+
+// a: number (good)
+const g = firstElement1([1, 2, 3]);
+const gd = firstElement1(["hello", "hello", "hello"]);
+// b: any (bad)
+const b = firstElement2([1, 2, 3]);
+const bd = firstElement2(["hello", "hello", "hello"]);
+
+// These might seem identical at first glance, but firstElement1 is a much better way to write this function. Its inferred return type is Type, but firstElement2’s inferred return type is any because TypeScript has to resolve the arr[0] expression using the constraint type, rather than “waiting” to resolve the element during a call.
+
+// Rule: When possible, use the type parameter itself rather than constraining it
+
+
+// Use Fewer Type Parameters
+
+// Here’s another pair of similar functions:
+
+function filter1<Type>(arr: Type[], func: (arg: Type) => boolean): Type[] {
+  return arr.filter(func);
+}
+
+function filter2<Type, Func extends (arg: Type) => boolean>(
+  arr: Type[],
+  func: Func
+): Type[] {
+  return arr.filter(func);
+}
+
+// We’ve created a type parameter Func that doesn’t relate two values. That’s always a red flag, because it means callers wanting to specify type arguments have to manually specify an extra type argument for no reason. Func doesn’t do anything but make the function harder to read and reason about!
+
+// Rule: Always use as few type parameters as possible 

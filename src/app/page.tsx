@@ -7,8 +7,9 @@ import {
 export default function Home() {
   return (
     <main className="">
-      <h1 className="text-2xl">Hello</h1>
-      <MobileHeaderBackground/>
+      <div className="bg-desaturatedDarkCyan w-full h-[156px]">
+        <MobileHeaderBackground className="w-full h-full" />
+      </div>
     </main>
   );
 }

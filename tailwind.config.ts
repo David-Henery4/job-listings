@@ -17,6 +17,10 @@ const config: Config = {
     fontFamily: {
       leagueSpartan: ["var(--font-leagueSpartan)"],
     },
+    gridTemplateRows: {
+      cardRows: "32px auto auto"
+    },
+
 
     extend: {
       backgroundImage: {

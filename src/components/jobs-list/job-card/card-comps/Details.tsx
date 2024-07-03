@@ -1,17 +1,31 @@
-const Details = ({ position, postedAt, location, contract }) => {
+import { JobDetails } from "@/types/jobTypes";
+
+const Details = ({
+  position,
+  postedAt,
+  location,
+  contract,
+  new: isNewJob,
+  featured,
+  company
+}: JobDetails) => {
   return (
     <div className="grid gap-4">
       <div className="flex justify-start items-center flex-wrap">
         <h3 className="text-lg font-semibold text-desaturatedDarkCyan mr-4">
-          Photosnap
+          {company}
         </h3>
         <div className="flex justify-start items-center font-semibold tracking-wide leading-[normal] text-lightGrayishCyanBackground gap-2">
-          <div className="bg-desaturatedDarkCyan px-2 py-[10px] rounded-3xl">
-            <p className="">NEW!</p>
-          </div>
-          <div className="px-2 py-[10px] rounded-3xl bg-veryDarkGrayishCyan">
-            <p className="">FEATURED</p>
-          </div>
+          {isNewJob && (
+            <div className="bg-desaturatedDarkCyan px-2 py-[10px] rounded-3xl">
+              <p className="">NEW!</p>
+            </div>
+          )}
+          {featured && (
+            <div className="px-2 py-[10px] rounded-3xl bg-veryDarkGrayishCyan">
+              <p className="">FEATURED</p>
+            </div>
+          )}
         </div>
       </div>
 

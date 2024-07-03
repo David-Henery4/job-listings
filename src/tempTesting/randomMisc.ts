@@ -19,11 +19,11 @@ const logpoint = (p: Point) => {
   console.log(p);
 };
 
-const point = { x: 12, y: 23 };
+const point = {y: 23, x: 12 };
 
 logpoint(point);
 
-const point3 = { x: 12, y: 26, z: 89 };
+const point3 = { y: 26, x: 12, z: 89 };
 logpoint(point3);
 
 const rect = { x: 33, y: 3, width: 30, height: 80 };

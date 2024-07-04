@@ -1,3 +1,4 @@
+
 import { TagTypes } from "@/types/jobTypes";
 
 type TagsProps = {

@@ -9,9 +9,10 @@ export default function Home() {
   return (
     <main className="">
       <div className="bg-desaturatedDarkCyan w-full h-[156px]">
-        <MobileHeaderBackground className="w-full h-full" />
+        <MobileHeaderBackground className="w-full h-full lap:hidden" />
+        <DesktopHeaderBackground className="w-full h-full hidden lap:block" />
       </div>
-      <JobsContainer/>
+      <JobsContainer />
     </main>
   );
 }

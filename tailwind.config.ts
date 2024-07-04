@@ -8,8 +8,9 @@ const config: Config = {
   ],
   theme: {
     screens: {
-      smTab: "40.62em", // (used)
-      tab: "48em", // (not used) // 925px / 875px = 54.68em / 768px = 48em // 1075px = 67.18em
+      smTab: "40.62em", //
+      tab: "48em", // 768px
+      lap: "64em", // 1024px
     },
     colors: {
       desaturatedDarkCyan: "#5BA4A4",

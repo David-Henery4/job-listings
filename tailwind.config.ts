@@ -7,6 +7,10 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    screens: {
+      smTab: "40.62em", // (used)
+      tab: "48em", // (not used) // 925px / 875px = 54.68em / 768px = 48em // 1075px = 67.18em
+    },
     colors: {
       desaturatedDarkCyan: "#5BA4A4",
       lightGrayishCyanBackground: "#EFFAFA",
@@ -18,9 +22,8 @@ const config: Config = {
       leagueSpartan: ["var(--font-leagueSpartan)"],
     },
     gridTemplateRows: {
-      cardRows: "32px auto auto"
+      cardRows: "32px auto auto",
     },
-
 
     extend: {
       backgroundImage: {

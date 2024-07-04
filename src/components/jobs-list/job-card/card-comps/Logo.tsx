@@ -9,7 +9,7 @@ const Logo = ({ logo }: LogoIcon) => {
   const CurrentSvg = dynamic(() => import(`/public/assets/images/${logo}`));
   //
   return (
-    <div className="w-16 h-16">
+    <div className="w-16 h-16 tab:w-[88px] tab:h-[88px]">
       <CurrentSvg
       // className="w-full h-full"
       />

@@ -4,12 +4,12 @@ import { Job } from "@/types/jobTypes";
 
 const JobsList = () => {
   return (
-    <div className="flex flex-col justify-center items-center gap-6">
+    <div className="w-full flex flex-col justify-center items-center gap-6 max-w-96 mx-auto tab:max-w-[1110px]">
       {jobsData.map((job: Job) => {
-        return <JobsCard key={job?.id} {...job}/>
+        return <JobsCard key={job?.id} {...job} />;
       })}
     </div>
-  )
+  );
 }
 
 export default JobsList

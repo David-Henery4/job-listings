@@ -1,5 +1,7 @@
 import { Logo, Details, Tags } from "./card-comps";
-import { Job, JobDetails, TagTypes } from "@/types/jobTypes";
+import { Job, JobDetails, TagTypes, SearchParamsTypes } from "@/types/jobTypes";
+
+type JobWithSearchParams = Job & SearchParamsTypes
 
 const JobsCard = ({
   position,
@@ -15,7 +17,8 @@ const JobsCard = ({
   role,
   tools,
   new: isNewJob,
-}: Job) => {
+  searchParams
+}: JobWithSearchParams) => {
   const details: JobDetails = {
     position,
     postedAt,
@@ -36,7 +39,7 @@ const JobsCard = ({
         <div className="w-full mt-2 tab:flex tab:justify-between tab:items-center tab:flex-[1] tab:m-0">
           <Details {...details} />
           <div className="w-full h-[1.5px] bg-darkGrayishCyan/25 my-4 tab:hidden"></div>
-          <Tags tags={tags} />
+          <Tags tags={tags} searchParams={searchParams} />
         </div>
       </div>
     </div>

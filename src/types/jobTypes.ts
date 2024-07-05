@@ -14,6 +14,13 @@ export interface Job {
   tools: string[];
 }
 
+export interface SearchTypes {
+  params: {};
+  searchParams: { category?: string };
+}
+
+export type SearchParamsTypes = Pick<SearchTypes, "searchParams">
+
 export type JobDetails = Pick<
   Job,
   "location" | "position" | "postedAt" | "contract" | "new" | "featured" | "company"
@@ -22,5 +29,7 @@ export type JobDetails = Pick<
 export type LogoIcon = Pick<Job, "logo">
 
 export type TagTypes = string[]
+
+
 
 // export default Job

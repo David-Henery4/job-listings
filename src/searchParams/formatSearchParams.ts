@@ -1,11 +1,7 @@
-import { SearchParamsTypes } from "@/types/jobTypes";
-
-interface FormattedSearchParamsReturn {
-  pathname: "/"
-  query?: {
-    category: string;
-  };
-}
+import {
+  SearchParamsTypes,
+  FormattedSearchParamsReturn,
+} from "@/types/jobTypes";
 
 const formatSearchParams = (
   newQuery: string,

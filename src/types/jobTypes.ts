@@ -21,6 +21,13 @@ export interface SearchTypes {
 
 export type SearchParamsTypes = Pick<SearchTypes, "searchParams">
 
+export interface FormattedSearchParamsReturn {
+  pathname: "/";
+  query?: {
+    category: string;
+  };
+}
+
 export type JobDetails = Pick<
   Job,
   "location" | "position" | "postedAt" | "contract" | "new" | "featured" | "company"
